@@ -4,7 +4,7 @@ import {TransactionEvent, transactionSk2ToPurchaseMap} from './types/appleSk2';
 import {isIosStorekit2} from './iap';
 import { getAndroidModule, getIosModule, getNativeModule, isAndroid, isIos } from './internal';
 import type {PurchaseError} from './purchaseError';
-import type {Purchase} from './types';
+import type {AlternativeChoiceDetails, Purchase} from './types';
 
 /**
  * Add IAP purchase event
@@ -194,4 +194,18 @@ export const transactionListener = (
   }
 
   return null;
+};
+
+
+export const userChoiceBillingListener = (
+  listener: (alternativeChoiceDetails: AlternativeChoiceDetails) => void,
+) => {
+  const eventEmitter = new NativeEventEmitter(getNativeModule());
+
+  const emitterSubscription = eventEmitter.addListener(
+    'user-alternative-billing-selected',
+    listener,
+  );
+
+  return emitterSubscription;
 };

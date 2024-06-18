@@ -5,10 +5,12 @@ import {
   purchaseErrorListener,
   purchaseUpdatedListener,
   transactionListener,
+  userChoiceBillingListener
 } from '../eventEmitter';
 import {IapIos, initConnection} from '../iap';
 import type {PurchaseError} from '../purchaseError';
 import type {
+  AlternativeChoiceDetails,
   Product,
   ProductPurchase,
   Purchase,
@@ -65,6 +67,7 @@ export function withIAPContext<T>(Component: React.ComponentType<T>) {
     const [availablePurchases, setAvailablePurchases] = useState<Purchase[]>(
       [],
     );
+    const [userChoiceDetails, setUserChoiceDetails] = useState<AlternativeChoiceDetails>();
     const [currentPurchase, setCurrentPurchase] = useState<Purchase>();
     const [currentTransaction, setCurrentTransaction] =
       useState<TransactionSk2>();
@@ -82,6 +85,7 @@ export function withIAPContext<T>(Component: React.ComponentType<T>) {
         promotedProductsIOS,
         purchaseHistory,
         availablePurchases,
+        userChoiceDetails,
         currentPurchase,
         currentTransaction,
         currentPurchaseError,
@@ -100,6 +104,7 @@ export function withIAPContext<T>(Component: React.ComponentType<T>) {
         promotedProductsIOS,
         purchaseHistory,
         availablePurchases,
+        userChoiceDetails,
         currentPurchase,
         currentTransaction,
         currentPurchaseError,
@@ -157,11 +162,18 @@ export function withIAPContext<T>(Component: React.ComponentType<T>) {
         ]);
       });
 
+      const userChoiceBillingSubscription = userChoiceBillingListener(
+        async (alternativeChoiceDetails: AlternativeChoiceDetails) => {
+          setUserChoiceDetails(alternativeChoiceDetails)
+        },
+      );
+
       return () => {
         purchaseUpdateSubscription.remove();
         purchaseErrorSubscription.remove();
         promotedProductSubscription?.remove();
         transactionUpdateSubscription?.remove();
+        userChoiceBillingSubscription?.remove();
       };
     }, [connected]);
 

@@ -13,6 +13,8 @@ import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchaseHistoryRecord
 import com.android.billingclient.api.PurchasesUpdatedListener
+import com.android.billingclient.api.AlternativeBillingListener
+import com.android.billingclient.api.AlternativeChoiceDetails
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchaseHistoryParams
 import com.android.billingclient.api.QueryPurchasesParams
@@ -42,7 +44,7 @@ class RNIapModule(
     private val googleApiAvailability: GoogleApiAvailability = GoogleApiAvailability.getInstance(),
 ) :
     ReactContextBaseJavaModule(reactContext),
-    PurchasesUpdatedListener {
+    PurchasesUpdatedListener, AlternativeBillingListener {
 
     private var billingClientCache: BillingClient? = null
     private val skus: MutableMap<String, ProductDetails> = mutableMapOf()
@@ -143,7 +145,7 @@ class RNIapModule(
             promise.safeResolve(true)
             return
         }
-        builder.setListener(this).build().also {
+        builder.setListener(this).enableAlternativeBilling(this).build().also {
             billingClientCache = it
             it.startConnection(
                 object : BillingClientStateListener {
@@ -735,6 +737,7 @@ class RNIapModule(
 
     companion object {
         private const val PROMISE_BUY_ITEM = "PROMISE_BUY_ITEM"
+        private const val PROMISE_USER_CHOICE_DETAILS = "PROMISE_USER_CHOICE_DETAILS"
         const val TAG = "RNIapModule"
     }
 
@@ -748,5 +751,18 @@ class RNIapModule(
             }
         }
         reactContext.addLifecycleEventListener(lifecycleEventListener)
+    }
+
+    override fun userSelectedAlternativeBilling(alternativeChoiceDetails: AlternativeChoiceDetails) {
+        val externalTransactionToken = alternativeChoiceDetails.externalTransactionToken
+        val originalExternalTransactionId = alternativeChoiceDetails.originalExternalTransactionId
+
+        val params = Arguments.createMap()
+        params.putString("externalTransactionToken", externalTransactionToken)
+        params.putString("originalExternalTransactionId", originalExternalTransactionId)
+
+        sendEvent(reactContext, "user-alternative-billing-selected", params)
+
+        PromiseUtils.resolvePromisesForKey(PROMISE_USER_CHOICE_DETAILS, alternativeChoiceDetails)
     }
 }

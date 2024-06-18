@@ -136,6 +136,12 @@ export interface ProductIOS extends ProductCommon {
 
 export type Product = ProductAndroid & ProductIOS;
 
+export type AlternativeChoiceDetails = {
+  getExternalTransactionToken: () => string;
+  getOriginalExternalTransactionId: () => string;
+  getProducts: () => Product[];
+};
+
 /**
  * Can be used to distinguish the different platforms' subscription information
  */
